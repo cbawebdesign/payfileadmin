@@ -73,12 +73,12 @@ export default function AdminDashboard() {
 
   const resetAll = () => {
     setProcesses(prev => {
-      const reset = {} as typeof processes;
+      const reset: any = {};
       (Object.keys(prev) as ProcessKey[]).forEach(k => reset[k] = { ...prev[k], done: false });
       return reset;
     });
     setUnionStatus(prev => {
-      const reset = {} as typeof unionStatus;
+      const reset: any = {};
       (Object.keys(prev) as UnionKey[]).forEach(k => reset[k] = { done: false });
       return reset;
     });
