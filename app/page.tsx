@@ -12,21 +12,21 @@ export default function AdminDashboard() {
   });
 
   const [processes, setProcesses] = useState({
-    payfile_received: { done: false, label: 'PayFile Received from NY', category: 'intake' },
-    decryption: { done: false, label: 'Decryption', category: 'intake' },
-    payfile_raw: { done: false, label: 'PAYFILE_RAW', category: 'extraction' },
-    payfile_extracted: { done: false, label: 'PAYFILE_EXTRACTED', category: 'extraction' },
-    mismatched_premiums: { done: false, label: 'MISMATCHED_PREMIUMS', category: 'validation' },
-    users_not_in_database: { done: false, label: 'USERS_NOT_IN_DATABASE', category: 'validation' },
-    active_users_missing: { done: false, label: 'ACTIVE_USERS_MISSING', category: 'validation' },
-    deduction_status_changes: { done: false, label: 'DEDUCTION_STATUS_CHANGES', category: 'validation' },
-    premium_mismatches_all: { done: false, label: 'PREMIUM_MISMATCHES_ALL', category: 'reports' },
-    master_sheet_changes: { done: false, label: 'MASTER_SHEET_CHANGES', category: 'reports' },
-    premium_history_all: { done: false, label: 'PREMIUM_HISTORY_ALL', category: 'reports' },
-    ms_errors: { done: false, label: 'MSErrors', category: 'reports' },
-    error_files: { done: false, label: 'ERROR_FILES', category: 'reports' },
-    sent_ny_files: { done: false, label: 'SENT_NY_FILES', category: 'outgoing' },
-    past_pay_files: { done: false, label: 'PAST_PAY_FILES', category: 'archive' },
+    payfile_received: { done: false, label: 'PayFile Received from NY', category: 'intake' as const },
+    decryption: { done: false, label: 'Decryption', category: 'intake' as const },
+    payfile_raw: { done: false, label: 'PAYFILE_RAW', category: 'extraction' as const },
+    payfile_extracted: { done: false, label: 'PAYFILE_EXTRACTED', category: 'extraction' as const },
+    mismatched_premiums: { done: false, label: 'MISMATCHED_PREMIUMS', category: 'validation' as const },
+    users_not_in_database: { done: false, label: 'USERS_NOT_IN_DATABASE', category: 'validation' as const },
+    active_users_missing: { done: false, label: 'ACTIVE_USERS_MISSING', category: 'validation' as const },
+    deduction_status_changes: { done: false, label: 'DEDUCTION_STATUS_CHANGES', category: 'validation' as const },
+    premium_mismatches_all: { done: false, label: 'PREMIUM_MISMATCHES_ALL', category: 'reports' as const },
+    master_sheet_changes: { done: false, label: 'MASTER_SHEET_CHANGES', category: 'reports' as const },
+    premium_history_all: { done: false, label: 'PREMIUM_HISTORY_ALL', category: 'reports' as const },
+    ms_errors: { done: false, label: 'MSErrors', category: 'reports' as const },
+    error_files: { done: false, label: 'ERROR_FILES', category: 'reports' as const },
+    sent_ny_files: { done: false, label: 'SENT_NY_FILES', category: 'outgoing' as const },
+    past_pay_files: { done: false, label: 'PAST_PAY_FILES', category: 'archive' as const },
   });
 
   const [expandedCategories, setExpandedCategories] = useState({
@@ -49,33 +49,37 @@ export default function AdminDashboard() {
     archive: { label: '6. Archive', color: 'bg-gray-500' }
   };
 
-  const toggleProcess = (key: string) => {
+  type ProcessKey = keyof typeof processes;
+  type UnionKey = keyof typeof unionStatus;
+  type CategoryKey = keyof typeof expandedCategories;
+
+  const toggleProcess = (key: ProcessKey) => {
     setProcesses(prev => ({
       ...prev,
       [key]: { ...prev[key], done: !prev[key].done }
     }));
   };
 
-  const toggleUnion = (union: string) => {
+  const toggleUnion = (union: UnionKey) => {
     setUnionStatus(prev => ({
       ...prev,
       [union]: { done: !prev[union].done }
     }));
   };
 
-  const toggleCategory = (cat: string) => {
+  const toggleCategory = (cat: CategoryKey) => {
     setExpandedCategories(prev => ({ ...prev, [cat]: !prev[cat] }));
   };
 
   const resetAll = () => {
     setProcesses(prev => {
-      const reset: typeof processes = {};
-      Object.keys(prev).forEach(k => reset[k] = { ...prev[k], done: false });
+      const reset = {} as typeof processes;
+      (Object.keys(prev) as ProcessKey[]).forEach(k => reset[k] = { ...prev[k], done: false });
       return reset;
     });
     setUnionStatus(prev => {
-      const reset: typeof unionStatus = {};
-      Object.keys(prev).forEach(k => reset[k] = { done: false });
+      const reset = {} as typeof unionStatus;
+      (Object.keys(prev) as UnionKey[]).forEach(k => reset[k] = { done: false });
       return reset;
     });
   };
@@ -84,7 +88,7 @@ export default function AdminDashboard() {
   const totalCount = Object.keys(processes).length;
   const progress = (completedCount / totalCount) * 100;
 
-  const getProcessesByCategory = (cat: string) => {
+  const getProcessesByCategory = (cat: CategoryKey) => {
     return Object.entries(processes).filter(([_, p]) => p.category === cat);
   };
 
@@ -127,7 +131,7 @@ export default function AdminDashboard() {
             <span className="text-white font-medium">{completedCount} / {totalCount}</span>
           </div>
           <div className="h-3 bg-slate-700 rounded-full overflow-hidden">
-            <div
+            <div 
               className="h-full bg-gradient-to-r from-pink-500 to-green-500 transition-all duration-300"
               style={{ width: `${progress}%` }}
             />
@@ -138,13 +142,13 @@ export default function AdminDashboard() {
         <div className="bg-slate-800 rounded-xl p-4 mb-6">
           <h3 className="text-sm font-medium text-slate-400 mb-3">Union Processing Status</h3>
           <div className="flex flex-wrap gap-3">
-            {Object.entries(unionStatus).map(([union, status]) => (
+            {(Object.entries(unionStatus) as [UnionKey, { done: boolean }][]).map(([union, status]) => (
               <button
                 key={union}
                 onClick={() => toggleUnion(union)}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-all ${
-                  status.done
-                    ? 'bg-green-500/20 border-green-500 text-green-400'
+                  status.done 
+                    ? 'bg-green-500/20 border-green-500 text-green-400' 
                     : 'bg-slate-700 border-slate-600 text-slate-300 hover:border-slate-500'
                 }`}
               >
@@ -157,7 +161,7 @@ export default function AdminDashboard() {
 
         {/* Process Categories */}
         <div className="space-y-4">
-          {Object.entries(categories).map(([catKey, catInfo]) => {
+          {(Object.entries(categories) as [CategoryKey, { label: string; color: string }][]).map(([catKey, catInfo]) => {
             const catProcesses = getProcessesByCategory(catKey);
             const catCompleted = catProcesses.filter(([_, p]) => p.done).length;
             const isExpanded = expandedCategories[catKey];
@@ -183,7 +187,7 @@ export default function AdminDashboard() {
                     {catProcesses.map(([key, process]) => (
                       <button
                         key={key}
-                        onClick={() => toggleProcess(key)}
+                        onClick={() => toggleProcess(key as ProcessKey)}
                         className={`w-full flex items-center gap-3 p-3 rounded-lg border transition-all ${
                           process.done
                             ? 'bg-green-500/10 border-green-500/50 text-green-400'
