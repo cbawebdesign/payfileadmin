@@ -1,36 +1,191 @@
 'use client';
 
-import React, { useState } from 'react';
-import { CheckCircle, Circle, RotateCcw, ChevronDown, ChevronRight, FileText } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { CheckCircle, Circle, RotateCcw, ChevronDown, ChevronRight, FileText, Play, Clock, Zap } from 'lucide-react';
 
 export default function AdminDashboard() {
+  const [mounted, setMounted] = useState(false);
+  
   const [weekOf, setWeekOf] = useState(() => {
     const now = new Date();
-    const sat = new Date(now);
-    sat.setDate(now.getDate() - now.getDay() - 1);
-    return sat.toISOString().split('T')[0];
+    const sunday = new Date(now);
+    sunday.setDate(now.getDate() - now.getDay()); // Get last Sunday
+    return sunday.toISOString().split('T')[0];
   });
 
+  const getWeekRange = () => {
+    const sunday = new Date(weekOf);
+    const saturday = new Date(sunday);
+    saturday.setDate(sunday.getDate() + 6);
+    
+    const formatDate = (date: Date) => {
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    };
+    
+    return `${formatDate(sunday)} - ${formatDate(saturday)}`;
+  };
+
+  const getLastSunday5AM = () => {
+    const now = new Date();
+    const sunday = new Date(now);
+    sunday.setDate(now.getDate() - now.getDay()); // Get last Sunday
+    sunday.setHours(5, 0, 0, 0); // Set to 5:00 AM
+    return sunday;
+  };
+
+  const formatLastRun = (minutesOffset: number) => {
+    const baseTime = getLastSunday5AM();
+    baseTime.setMinutes(baseTime.getMinutes() + minutesOffset);
+    return baseTime.toLocaleString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
+  };
+
   const [processes, setProcesses] = useState({
-    payfile_received: { done: false, label: 'PayFile Received from NY', category: 'intake' as const },
-    decryption: { done: false, label: 'Decryption', category: 'intake' as const },
-    payfile_raw: { done: false, label: 'PAYFILE_RAW', category: 'extraction' as const },
-    payfile_extracted: { done: false, label: 'PAYFILE_EXTRACTED', category: 'extraction' as const },
-    mismatched_premiums: { done: false, label: 'MISMATCHED_PREMIUMS', category: 'validation' as const },
-    users_not_in_database: { done: false, label: 'USERS_NOT_IN_DATABASE', category: 'validation' as const },
-    active_users_missing: { done: false, label: 'ACTIVE_USERS_MISSING', category: 'validation' as const },
-    deduction_status_changes: { done: false, label: 'DEDUCTION_STATUS_CHANGES', category: 'validation' as const },
-    premium_mismatches_all: { done: false, label: 'PREMIUM_MISMATCHES_ALL', category: 'reports' as const },
-    master_sheet_changes: { done: false, label: 'MASTER_SHEET_CHANGES', category: 'reports' as const },
-    premium_history_all: { done: false, label: 'PREMIUM_HISTORY_ALL', category: 'reports' as const },
-    ms_errors: { done: false, label: 'MSErrors', category: 'reports' as const },
-    error_files: { done: false, label: 'ERROR_FILES', category: 'reports' as const },
-    sent_ny_files: { done: false, label: 'SENT_NY_FILES', category: 'outgoing' as const },
-    past_pay_files: { done: false, label: 'PAST_PAY_FILES', category: 'archive' as const },
+    payfile_received: { 
+      done: false, 
+      label: 'PayFile Received from NY', 
+      category: 'intake' as const,
+      schedule: 'Saturday 12:00 PM EST',
+      avgDuration: '~5 min',
+      lastRun: formatLastRun(-1020),
+      status: 'automated' as 'pending' | 'running' | 'success' | 'failed' | 'automated' | 'manual'
+    },
+    decryption: { 
+      done: false, 
+      label: 'Decryption', 
+      category: 'intake' as const,
+      schedule: 'Sunday 5:00 AM EST',
+      avgDuration: '~2 min',
+      lastRun: formatLastRun(0),
+      status: 'automated' as 'pending' | 'running' | 'success' | 'failed' | 'automated' | 'manual'
+    },
+    payfile_raw: { 
+      done: false, 
+      label: 'PAYFILE_RAW', 
+      category: 'extraction' as const,
+      schedule: 'Sunday 5:02 AM EST',
+      avgDuration: '~3 min',
+      lastRun: formatLastRun(2),
+      status: 'automated' as 'pending' | 'running' | 'success' | 'failed' | 'automated' | 'manual'
+    },
+    payfile_extracted: { 
+      done: false, 
+      label: 'PAYFILE_EXTRACTED', 
+      category: 'extraction' as const,
+      schedule: 'Sunday 5:05 AM EST',
+      avgDuration: '~4 min',
+      lastRun: formatLastRun(5),
+      status: 'automated' as 'pending' | 'running' | 'success' | 'failed' | 'automated' | 'manual'
+    },
+    mismatched_premiums: { 
+      done: false, 
+      label: 'MISMATCHED_PREMIUMS', 
+      category: 'validation' as const,
+      schedule: 'Sunday 5:10 AM EST',
+      avgDuration: '~2 min',
+      lastRun: formatLastRun(10),
+      status: 'automated' as 'pending' | 'running' | 'success' | 'failed' | 'automated' | 'manual'
+    },
+    users_not_in_database: { 
+      done: false, 
+      label: 'USERS_NOT_IN_DATABASE', 
+      category: 'validation' as const,
+      schedule: 'Sunday 5:12 AM EST',
+      avgDuration: '~3 min',
+      lastRun: formatLastRun(12),
+      status: 'automated' as 'pending' | 'running' | 'success' | 'failed' | 'automated' | 'manual'
+    },
+    active_users_missing: { 
+      done: false, 
+      label: 'ACTIVE_USERS_MISSING', 
+      category: 'validation' as const,
+      schedule: 'Sunday 5:15 AM EST',
+      avgDuration: '~2 min',
+      lastRun: formatLastRun(15),
+      status: 'automated' as 'pending' | 'running' | 'success' | 'failed' | 'automated' | 'manual'
+    },
+    deduction_status_changes: { 
+      done: false, 
+      label: 'DEDUCTION_STATUS_CHANGES', 
+      category: 'validation' as const,
+      schedule: 'Sunday 5:17 AM EST',
+      avgDuration: '~2 min',
+      lastRun: formatLastRun(17),
+      status: 'automated' as 'pending' | 'running' | 'success' | 'failed' | 'automated' | 'manual'
+    },
+    sent_ny_files: { 
+      done: false, 
+      label: 'SENT_NY_FILES', 
+      category: 'outgoing' as const,
+      schedule: 'Manual',
+      avgDuration: '~1 min',
+      lastRun: null as string | null,
+      status: 'manual' as 'pending' | 'running' | 'success' | 'failed' | 'automated' | 'manual'
+    },
+    premium_mismatches_all: { 
+      done: false, 
+      label: 'PREMIUM_MISMATCHES_ALL', 
+      category: 'standalone' as const,
+      schedule: 'On Demand',
+      avgDuration: '~3 min',
+      lastRun: null as string | null,
+      status: 'manual' as 'pending' | 'running' | 'success' | 'failed' | 'automated' | 'manual'
+    },
+    master_sheet_changes: { 
+      done: false, 
+      label: 'MASTER_SHEET_CHANGES', 
+      category: 'standalone' as const,
+      schedule: 'On Demand',
+      avgDuration: '~2 min',
+      lastRun: null as string | null,
+      status: 'manual' as 'pending' | 'running' | 'success' | 'failed' | 'automated' | 'manual'
+    },
+    premium_history_all: { 
+      done: false, 
+      label: 'PREMIUM_HISTORY_ALL', 
+      category: 'standalone' as const,
+      schedule: 'On Demand',
+      avgDuration: '~5 min',
+      lastRun: null as string | null,
+      status: 'manual' as 'pending' | 'running' | 'success' | 'failed' | 'automated' | 'manual'
+    },
+    ms_errors: { 
+      done: false, 
+      label: 'MSErrors', 
+      category: 'standalone' as const,
+      schedule: 'On Demand',
+      avgDuration: '~1 min',
+      lastRun: null as string | null,
+      status: 'manual' as 'pending' | 'running' | 'success' | 'failed' | 'automated' | 'manual'
+    },
+    error_files: { 
+      done: false, 
+      label: 'ERROR_FILES', 
+      category: 'standalone' as const,
+      schedule: 'On Demand',
+      avgDuration: '~2 min',
+      lastRun: null as string | null,
+      status: 'manual' as 'pending' | 'running' | 'success' | 'failed' | 'automated' | 'manual'
+    },
+    past_pay_files: { 
+      done: false, 
+      label: 'PAST_PAY_FILES', 
+      category: 'standalone' as const,
+      schedule: 'On Demand',
+      avgDuration: '~3 min',
+      lastRun: null as string | null,
+      status: 'manual' as 'pending' | 'running' | 'success' | 'failed' | 'automated' | 'manual'
+    },
   });
 
   const [expandedCategories, setExpandedCategories] = useState({
-    intake: true, extraction: true, validation: true, reports: true, outgoing: true, archive: true
+    intake: true, extraction: true, validation: true, outgoing: true, standalone: false
   });
 
   const [unionStatus, setUnionStatus] = useState({
@@ -40,13 +195,26 @@ export default function AdminDashboard() {
     MASTER_SHEET: { done: false }
   });
 
+  // Load from localStorage after mount
+  useEffect(() => {
+    setMounted(true);
+    const savedProcesses = localStorage.getItem('processes');
+    const savedUnions = localStorage.getItem('unionStatus');
+    
+    if (savedProcesses) {
+      setProcesses(JSON.parse(savedProcesses));
+    }
+    if (savedUnions) {
+      setUnionStatus(JSON.parse(savedUnions));
+    }
+  }, []);
+
   const categories: Record<string, { label: string; color: string }> = {
     intake: { label: '1. Intake', color: 'bg-purple-500' },
     extraction: { label: '2. Extraction', color: 'bg-blue-500' },
     validation: { label: '3. Validation Scripts', color: 'bg-yellow-500' },
-    reports: { label: '4. Reports', color: 'bg-green-500' },
-    outgoing: { label: '5. Outgoing to NY', color: 'bg-pink-500' },
-    archive: { label: '6. Archive', color: 'bg-gray-500' }
+    outgoing: { label: '4. Outgoing to NY', color: 'bg-pink-500' },
+    standalone: { label: 'Standalone Processes', color: 'bg-gray-500' }
   };
 
   type ProcessKey = keyof typeof processes;
@@ -54,43 +222,84 @@ export default function AdminDashboard() {
   type CategoryKey = keyof typeof expandedCategories;
 
   const toggleProcess = (key: ProcessKey) => {
-    setProcesses(prev => ({
-      ...prev,
-      [key]: { ...prev[key], done: !prev[key].done }
-    }));
+    setProcesses((prev: typeof processes) => {
+      // Only allow toggling if not already done
+      if (prev[key].done) return prev;
+      return {
+        ...prev,
+        [key]: { ...prev[key], done: true }
+      };
+    });
   };
 
   const toggleUnion = (union: UnionKey) => {
-    setUnionStatus(prev => ({
+    setUnionStatus((prev: typeof unionStatus) => ({
       ...prev,
       [union]: { done: !prev[union].done }
     }));
   };
 
   const toggleCategory = (cat: CategoryKey) => {
-    setExpandedCategories(prev => ({ ...prev, [cat]: !prev[cat] }));
+    setExpandedCategories((prev: typeof expandedCategories) => ({ ...prev, [cat]: !prev[cat] }));
   };
 
   const resetAll = () => {
-    setProcesses(prev => {
+    setProcesses((prev: typeof processes) => {
       const reset: any = {};
       (Object.keys(prev) as ProcessKey[]).forEach(k => reset[k] = { ...prev[k], done: false });
       return reset;
     });
-    setUnionStatus(prev => {
+    setUnionStatus((prev: typeof unionStatus) => {
       const reset: any = {};
       (Object.keys(prev) as UnionKey[]).forEach(k => reset[k] = { done: false });
       return reset;
     });
   };
 
-  const completedCount = Object.values(processes).filter(p => p.done).length;
-  const totalCount = Object.keys(processes).length;
+  const completedCount = Object.values(processes).filter(p => p.done && p.category !== 'standalone').length;
+  const totalCount = Object.values(processes).filter(p => p.category !== 'standalone').length;
   const progress = (completedCount / totalCount) * 100;
+
+  const getStatusColor = (status: string) => {
+    switch(status) {
+      case 'running': return 'text-blue-400';
+      case 'success': return 'text-green-400';
+      case 'failed': return 'text-red-400';
+      default: return 'text-gray-400';
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch(status) {
+      case 'running': return 'bg-blue-500/20 border-blue-500 text-blue-400';
+      case 'success': return 'bg-green-500/20 border-green-500 text-green-400';
+      case 'failed': return 'bg-red-500/20 border-red-500 text-red-400';
+      case 'automated': return 'bg-purple-500/20 border-purple-500 text-purple-400';
+      case 'manual': return 'bg-gray-500/20 border-gray-500 text-gray-400';
+      default: return 'bg-gray-500/20 border-gray-500 text-gray-400';
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch(status) {
+      case 'automated': return 'AUTO';
+      case 'manual': return 'MANUAL';
+      default: return status.toUpperCase();
+    }
+  };
 
   const getProcessesByCategory = (cat: CategoryKey) => {
     return Object.entries(processes).filter(([_, p]) => p.category === cat);
   };
+
+  // Save to localStorage whenever state changes
+  useEffect(() => {
+    localStorage.setItem('processes', JSON.stringify(processes));
+  }, [processes]);
+
+  useEffect(() => {
+    localStorage.setItem('unionStatus', JSON.stringify(unionStatus));
+  }, [unionStatus]);
 
   return (
     <div className="min-h-screen bg-slate-900 text-white p-6">
@@ -102,6 +311,7 @@ export default function AdminDashboard() {
             <h1 className="text-3xl font-bold">Weekly Process Tracker</h1>
           </div>
           <p className="text-slate-400">Tri-State Benefits - PayFile Processing</p>
+          <p className="text-slate-500 text-sm mt-1">Week: {getWeekRange()}</p>
         </div>
 
         {/* Week Selector & Reset */}
@@ -127,7 +337,7 @@ export default function AdminDashboard() {
         {/* Progress Bar */}
         <div className="bg-slate-800 rounded-xl p-4 mb-6">
           <div className="flex justify-between text-sm mb-2">
-            <span className="text-slate-400">Weekly Progress</span>
+            <span className="text-slate-400">Weekly Process Progress</span>
             <span className="text-white font-medium">{completedCount} / {totalCount}</span>
           </div>
           <div className="h-3 bg-slate-700 rounded-full overflow-hidden">
@@ -185,22 +395,58 @@ export default function AdminDashboard() {
                 {isExpanded && (
                   <div className="px-4 pb-4 space-y-2">
                     {catProcesses.map(([key, process]) => (
-                      <button
+                      <div
                         key={key}
-                        onClick={() => toggleProcess(key as ProcessKey)}
-                        className={`w-full flex items-center gap-3 p-3 rounded-lg border transition-all ${
+                        className={`w-full flex items-center justify-between p-3 rounded-lg border transition-all ${
                           process.done
-                            ? 'bg-green-500/10 border-green-500/50 text-green-400'
-                            : 'bg-slate-700/50 border-slate-600 text-slate-300 hover:border-slate-500'
+                            ? 'bg-green-500/10 border-green-500/50'
+                            : 'bg-slate-700/50 border-slate-600'
                         }`}
                       >
-                        {process.done ? (
-                          <CheckCircle size={20} className="text-green-500 flex-shrink-0" />
-                        ) : (
-                          <Circle size={20} className="text-slate-500 flex-shrink-0" />
-                        )}
-                        <span className="text-left font-mono text-sm">{process.label}</span>
-                      </button>
+                        <button
+                          onClick={() => toggleProcess(key as ProcessKey)}
+                          className={`flex items-center gap-3 flex-1 ${process.done ? 'cursor-default' : 'cursor-pointer'}`}
+                          disabled={process.done}
+                        >
+                          {process.done ? (
+                            <CheckCircle size={20} className="text-green-500 flex-shrink-0" />
+                          ) : (
+                            <Circle size={20} className="text-slate-500 flex-shrink-0" />
+                          )}
+                          <div className="text-left">
+                            <div className="font-mono text-sm text-slate-300">{process.label}</div>
+                            <div className="flex items-center gap-3 mt-1 text-xs">
+                              <span className="flex items-center gap-1 text-slate-500">
+                                <Clock size={12} />
+                                {process.schedule}
+                              </span>
+                              <span className="flex items-center gap-1 text-slate-500">
+                                <Zap size={12} />
+                                {process.avgDuration}
+                              </span>
+                              {process.lastRun && (
+                                <span className="text-slate-300 font-medium">
+                                  Last: {process.lastRun}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </button>
+                        
+                        <div className="flex items-center gap-2">
+                          <span className={`px-2 py-1 rounded text-xs font-medium border ${getStatusBadge(process.status)}`}>
+                            {getStatusLabel(process.status)}
+                          </span>
+                          {process.status === 'manual' && (
+                            <button
+                              className="p-2 hover:bg-slate-600 rounded-lg transition-colors text-slate-400 hover:text-white"
+                              title="Run Now"
+                            >
+                              <Play size={16} />
+                            </button>
+                          )}
+                        </div>
+                      </div>
                     ))}
                   </div>
                 )}
@@ -213,7 +459,7 @@ export default function AdminDashboard() {
         {progress === 100 && (
           <div className="mt-6 bg-green-500/20 border border-green-500 rounded-xl p-4 text-center">
             <CheckCircle className="inline-block mb-2 text-green-500" size={32} />
-            <p className="text-green-400 font-medium">All processes complete for this week! 🎉</p>
+            <p className="text-green-400 font-medium">All weekly processes complete! 🎉</p>
           </div>
         )}
       </div>
