@@ -123,10 +123,10 @@ export default function AdminDashboard() {
       done: false, 
       label: 'SENT_NY_FILES', 
       category: 'outgoing' as const,
-      schedule: 'Manual',
+      schedule: 'Thursday 4:05 PM EST',
       avgDuration: '~1 min',
       lastRun: null as string | null,
-      status: 'manual' as 'pending' | 'running' | 'success' | 'failed' | 'automated' | 'manual'
+      status: 'automated' as 'pending' | 'running' | 'success' | 'failed' | 'automated' | 'manual'
     },
     premium_mismatches_all: { 
       done: false, 
@@ -185,14 +185,13 @@ export default function AdminDashboard() {
   });
 
   const [expandedCategories, setExpandedCategories] = useState({
-    intake: true, extraction: true, validation: true, outgoing: true, standalone: false
+    intake: true, extraction: true, validation: true, outgoing: true, standalone: true
   });
 
   const [unionStatus, setUnionStatus] = useState({
     COBA: { done: false },
     L831: { done: false },
-    MISC: { done: false },
-    MASTER_SHEET: { done: false }
+ 
   });
 
   // Load from localStorage after mount
@@ -233,10 +232,14 @@ export default function AdminDashboard() {
   };
 
   const toggleUnion = (union: UnionKey) => {
-    setUnionStatus((prev: typeof unionStatus) => ({
-      ...prev,
-      [union]: { done: !prev[union].done }
-    }));
+    setUnionStatus((prev: typeof unionStatus) => {
+      // Only allow toggling if not already done
+      if (prev[union].done) return prev;
+      return {
+        ...prev,
+        [union]: { done: true }
+      };
+    });
   };
 
   const toggleCategory = (cat: CategoryKey) => {
@@ -356,10 +359,11 @@ export default function AdminDashboard() {
               <button
                 key={union}
                 onClick={() => toggleUnion(union)}
+                disabled={status.done}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-all ${
                   status.done 
-                    ? 'bg-green-500/20 border-green-500 text-green-400' 
-                    : 'bg-slate-700 border-slate-600 text-slate-300 hover:border-slate-500'
+                    ? 'bg-green-500/20 border-green-500 text-green-400 cursor-default' 
+                    : 'bg-slate-700 border-slate-600 text-slate-300 hover:border-slate-500 cursor-pointer'
                 }`}
               >
                 {status.done ? <CheckCircle size={16} /> : <Circle size={16} />}
@@ -405,8 +409,8 @@ export default function AdminDashboard() {
                       >
                         <button
                           onClick={() => toggleProcess(key as ProcessKey)}
-                          className={`flex items-center gap-3 flex-1 ${process.done ? 'cursor-default' : 'cursor-pointer'}`}
-                          disabled={process.done}
+                          className={`flex items-center gap-3 flex-1 ${process.done ? 'cursor-default' : process.category === 'standalone' ? 'cursor-default' : 'cursor-pointer'}`}
+                          disabled={process.done || process.category === 'standalone'}
                         >
                           {process.done ? (
                             <CheckCircle size={20} className="text-green-500 flex-shrink-0" />
@@ -434,10 +438,21 @@ export default function AdminDashboard() {
                         </button>
                         
                         <div className="flex items-center gap-2">
-                          <span className={`px-2 py-1 rounded text-xs font-medium border ${getStatusBadge(process.status)}`}>
-                            {getStatusLabel(process.status)}
-                          </span>
-                          {process.status === 'manual' && (
+                          {process.category !== 'standalone' && (
+                            <span className={`px-2 py-1 rounded text-xs font-medium border ${getStatusBadge(process.status)}`}>
+                              {getStatusLabel(process.status)}
+                            </span>
+                          )}
+                          {process.category === 'standalone' && (
+                            <span className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-green-500/20 border border-green-500 text-green-400">
+                              <span className="relative flex h-2 w-2">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                              </span>
+                              ACTIVE
+                            </span>
+                          )}
+                          {process.status === 'manual' && process.category !== 'standalone' && (
                             <button
                               className="p-2 hover:bg-slate-600 rounded-lg transition-colors text-slate-400 hover:text-white"
                               title="Run Now"
