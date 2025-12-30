@@ -191,7 +191,8 @@ export default function AdminDashboard() {
   const [unionStatus, setUnionStatus] = useState({
     COBA: { done: false },
     L831: { done: false },
- 
+    MISC: { done: false },
+    MASTER_SHEET: { done: false }
   });
 
   // Load from localStorage after mount
@@ -201,7 +202,20 @@ export default function AdminDashboard() {
     const savedUnions = localStorage.getItem('unionStatus');
     
     if (savedProcesses) {
-      setProcesses(JSON.parse(savedProcesses));
+      const parsed = JSON.parse(savedProcesses);
+      // Recalculate timestamps with current dates
+      const updated = {
+        ...parsed,
+        payfile_received: { ...parsed.payfile_received, lastRun: formatLastRun(-1020) },
+        decryption: { ...parsed.decryption, lastRun: formatLastRun(0) },
+        payfile_raw: { ...parsed.payfile_raw, lastRun: formatLastRun(2) },
+        payfile_extracted: { ...parsed.payfile_extracted, lastRun: formatLastRun(5) },
+        mismatched_premiums: { ...parsed.mismatched_premiums, lastRun: formatLastRun(10) },
+        users_not_in_database: { ...parsed.users_not_in_database, lastRun: formatLastRun(12) },
+        active_users_missing: { ...parsed.active_users_missing, lastRun: formatLastRun(15) },
+        deduction_status_changes: { ...parsed.deduction_status_changes, lastRun: formatLastRun(17) }
+      };
+      setProcesses(updated);
     }
     if (savedUnions) {
       setUnionStatus(JSON.parse(savedUnions));
